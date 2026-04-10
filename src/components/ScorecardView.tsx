@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import { ChatMessage, ScorecardItem } from '../types/quiz';
 import LearnerScorecard from './LearnerScorecard';
+import EvaluationPanel from './evaluation/EvaluationPanel';
 
 interface ScorecardViewProps {
     activeScorecard: ScorecardItem[];
     handleBackToChat: () => void;
     lastUserMessage: ChatMessage | null;
+    userId?: string;
+    taskId?: string;
 }
 
 const ScorecardView: React.FC<ScorecardViewProps> = ({
     activeScorecard,
     handleBackToChat,
     lastUserMessage,
+    userId,
+    taskId,
 }) => {
     const [isTextExpanded, setIsTextExpanded] = useState(false);
 
@@ -75,6 +80,13 @@ const ScorecardView: React.FC<ScorecardViewProps> = ({
                 </div>
 
                 <LearnerScorecard scorecard={activeScorecard} className="mt-0" />
+
+                {/* Multi-Modal Evaluation Display */}
+                {userId && taskId && (
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-zinc-800">
+                        <EvaluationPanel userId={userId} taskId={taskId} />
+                    </div>
+                )}
             </div>
         </div>
     );

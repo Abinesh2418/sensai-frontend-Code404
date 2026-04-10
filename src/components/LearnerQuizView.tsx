@@ -2094,6 +2094,8 @@ export default function LearnerQuizView({
                             activeScorecard={activeScorecard}
                             handleBackToChat={handleBackToChat}
                             lastUserMessage={getLastUserMessage as ChatMessage | null}
+                            userId={userId || user?.id}
+                            taskId={taskId}
                         />
                     ) : (
                         /* Use the ChatView component */

@@ -16,12 +16,20 @@ interface HeaderProps {
     showCreateCourseButton?: boolean;
     showTryDemoButton?: boolean;
     centerSlot?: React.ReactNode;
+    userRole?: "Student" | "Mentor" | "Admin";
 }
+
+const roleBadgeStyles: Record<string, string> = {
+    Student: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    Mentor: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+    Admin: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+};
 
 export function Header({
     showCreateCourseButton = true,
     showTryDemoButton = false,
     centerSlot,
+    userRole,
 }: HeaderProps) {
     const router = useRouter();
     const { data: session } = useSession();
@@ -202,6 +210,13 @@ export function Header({
                                 {getButtonText()}
                             </button>
                         )}
+
+                    {/* Role badge */}
+                    {userRole && (
+                        <span className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide ${roleBadgeStyles[userRole]}`}>
+                            {userRole}
+                        </span>
+                    )}
 
                     {/* Profile dropdown */}
                     <div className="relative" ref={profileMenuRef}>

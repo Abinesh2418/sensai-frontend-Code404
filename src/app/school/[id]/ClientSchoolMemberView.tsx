@@ -372,6 +372,12 @@ export default function ClientSchoolMemberView({ slug }: { slug: string }) {
         );
     }
 
+    const headerRole: "Student" | "Mentor" | "Admin" = isAdminOrOwner
+        ? "Admin"
+        : activeCohort?.role === "mentor"
+            ? "Mentor"
+            : "Student";
+
     const activeCourseName = courses.length > 0 ? courses[activeCourseIndex]?.name : undefined;
 
     const activeTaskTitle = taskId
@@ -410,6 +416,7 @@ export default function ClientSchoolMemberView({ slug }: { slug: string }) {
             <div className="hidden sm:block">
                 <Header
                     showCreateCourseButton={false}
+                    userRole={headerRole}
                     centerSlot={
                         <MemberSchoolViewHeader
                             cohorts={cohorts}

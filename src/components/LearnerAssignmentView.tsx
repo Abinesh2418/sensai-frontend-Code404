@@ -1204,6 +1204,8 @@ export default function LearnerAssignmentView({
                             activeScorecard={activeScorecard}
                             handleBackToChat={handleBackToChat}
                             lastUserMessage={null}
+                            userId={userId || user?.id}
+                            taskId={taskId}
                         />
                     ) : (
                         /* Use the ChatView component */

@@ -68,4 +68,7 @@ export interface Milestone {
 // Export all quiz types
 export * from './quiz';
 
-// Export other types as needed 
+// Export evaluation types
+export * from './evaluation';
+
+// Export other types as needed

@@ -3,7 +3,7 @@
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useState, useEffect, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from "react";
-import { Plus, FileText, Trash2, Check, HelpCircle, Pen, ClipboardCheck, BookOpen, Code, Sparkles, Tag } from "lucide-react";
+import { Plus, FileText, Trash2, Check, HelpCircle, Pen, ClipboardCheck, BookOpen, Code, Sparkles, Tag, FileCheck } from "lucide-react";
 
 // Add custom styles for dark mode
 import "./editor-styles.css";
@@ -462,7 +462,7 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
     const scorecardManagerRef = useRef<ScorecardManagerHandle>(null);
 
     // State for tracking active tab (question or answer)
-    const [activeEditorTab, setActiveEditorTab] = useState<'question' | 'answer' | 'scorecard' | 'knowledge'>('question');
+    const [activeEditorTab, setActiveEditorTab] = useState<'question' | 'answer' | 'scorecard' | 'knowledge' | 'answerTemplate'>('question');
 
     // State to track which field is being highlighted for validation errors
     const [highlightedField, setHighlightedField] = useState<'question' | 'answer' | 'codingLanguage' | 'title' | null>(null);
@@ -983,7 +983,7 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
         // Reset active tab to question when navigating
         // Only change active tab if the current tab is not available in the next question
         const nextQuestion = questions[newIndex];
-        if (activeEditorTab === 'scorecard' && nextQuestion.config.questionType !== 'subjective') {
+        if ((activeEditorTab === 'scorecard' || activeEditorTab === 'answerTemplate') && nextQuestion.config.questionType !== 'subjective') {
             setActiveEditorTab('question');
         } else if (activeEditorTab === 'answer' && nextQuestion.config.questionType == 'subjective') {
             setActiveEditorTab('question');
@@ -1025,7 +1025,7 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
 
         // Reset active tab to question when navigating
         const nextQuestion = questions[newIndex];
-        if (activeEditorTab === 'scorecard' && nextQuestion.config.questionType !== 'subjective') {
+        if ((activeEditorTab === 'scorecard' || activeEditorTab === 'answerTemplate') && nextQuestion.config.questionType !== 'subjective') {
             setActiveEditorTab('question');
         } else if (activeEditorTab === 'answer' && nextQuestion.config.questionType == 'subjective') {
             setActiveEditorTab('question');
@@ -1998,16 +1998,28 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
                                                     Correct answer
                                                 </button>
                                             ) : (
-                                                <button
-                                                    className={`flex items-center px-4 py-2 rounded-md text-sm font-medium cursor-pointer ${activeEditorTab === 'scorecard'
-                                                        ? 'bg-white text-black dark:bg-[#333333] dark:text-white'
-                                                        : 'text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white'
-                                                        }`}
-                                                    onClick={() => setActiveEditorTab('scorecard')}
-                                                >
-                                                    <ClipboardCheck size={16} className="mr-2" />
-                                                    Scorecard
-                                                </button>
+                                                <>
+                                                    <button
+                                                        className={`flex items-center px-4 py-2 rounded-md text-sm font-medium cursor-pointer ${activeEditorTab === 'scorecard'
+                                                            ? 'bg-white text-black dark:bg-[#333333] dark:text-white'
+                                                            : 'text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white'
+                                                            }`}
+                                                        onClick={() => setActiveEditorTab('scorecard')}
+                                                    >
+                                                        <ClipboardCheck size={16} className="mr-2" />
+                                                        Scorecard
+                                                    </button>
+                                                    <button
+                                                        className={`flex items-center px-4 py-2 rounded-md text-sm font-medium cursor-pointer ${activeEditorTab === 'answerTemplate'
+                                                            ? 'bg-white text-black dark:bg-[#333333] dark:text-white'
+                                                            : 'text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white'
+                                                            }`}
+                                                        onClick={() => setActiveEditorTab('answerTemplate')}
+                                                    >
+                                                        <FileCheck size={16} className="mr-2" />
+                                                        Answer Template
+                                                    </button>
+                                                </>
                                             )}
                                             <button
                                                 className={`flex items-center px-4 py-2 rounded-md text-sm font-medium cursor-pointer ${activeEditorTab === 'knowledge'
@@ -2154,6 +2166,23 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
                                                                 }}
                                                                 className="question"
                                                             />
+                                        ) : activeEditorTab === 'answerTemplate' ? (
+                                            <div className="w-full h-full flex flex-col">
+                                                <div className="px-6 py-3 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
+                                                    Provide a model answer or rubric that the AI will use as a reference when evaluating student responses.
+                                                </div>
+                                                <div className="editor-container h-full overflow-y-auto overflow-hidden relative z-0">
+                                                    <BlockNoteEditor
+                                                        key={`answer-template-editor-${currentQuestionIndex}`}
+                                                        initialContent={currentQuestionConfig.correctAnswer}
+                                                        onChange={handleCorrectAnswerChange}
+                                                        readOnly={readOnly}
+                                                        className="answer-template-editor"
+                                                        placeholder="Enter the ideal answer or evaluation rubric here..."
+                                                        allowMedia={false}
+                                                    />
+                                                </div>
+                                            </div>
                                         ) : (
                                             // Scorecard tab - use ScorecardManager component
                                             <div className="h-full w-full bg-white dark:bg-transparent">

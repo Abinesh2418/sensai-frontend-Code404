@@ -746,11 +746,10 @@ export default function CohortDashboard({ cohort, cohortId, schoolId, schoolSlug
                                                     )}
                                                     <td className="p-4 text-right">
                                                         <Link
-                                                            href={`/school/${schoolSlug}/courses/${activeCourseId || cohort.courses?.[0]?.id}/learner-view/${studentId}?cohortId=${cohort.id}`}
-                                                            target="_blank"
-                                                            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-sm text-gray-900 dark:bg-white/10 dark:hover:bg-white/15 dark:text-white rounded-md transition-colors cursor-pointer"
+                                                            href={`/school/${schoolSlug}/evaluation/${studentId}/${activeCourseId || cohort.courses?.[0]?.id}`}
+                                                            className="px-4 py-1.5 bg-gray-900 hover:bg-gray-800 text-sm text-white dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 rounded-full transition-colors cursor-pointer font-medium"
                                                         >
-                                                            View as learner
+                                                            Evaluate
                                                         </Link>
                                                     </td>
                                                 </tr>
@@ -763,6 +762,7 @@ export default function CohortDashboard({ cohort, cohortId, schoolId, schoolSlug
                     </div>
                 </div>
             )}
+
         </div>
     );
-} 
+}

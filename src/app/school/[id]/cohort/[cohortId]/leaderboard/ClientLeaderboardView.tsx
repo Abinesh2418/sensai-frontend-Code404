@@ -110,6 +110,7 @@ export default function ClientLeaderboardView({
                 <div className="hidden sm:block">
                     <Header
                         showCreateCourseButton={false}
+                        userRole="Student"
                     />
                 </div>
             )}

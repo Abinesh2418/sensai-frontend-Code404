@@ -483,6 +483,7 @@ export default function ClientSchoolAdminView({ id }: { id: string }) {
             <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
                 <Header
                     showCreateCourseButton={false}
+                    userRole="Admin"
                 />
                 <div className="flex justify-center items-center py-12">
                     <div className="w-12 h-12 border-t-2 border-b-2 rounded-full animate-spin border-black dark:border-white"></div>
