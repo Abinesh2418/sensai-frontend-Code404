@@ -47,7 +47,11 @@ import "katex/dist/katex.min.css";
 import {
     handleIntegrationPageSelection,
     handleIntegrationPageRemoval,
+    getUserIntegration,
 } from "@/lib/utils/integrationUtils";
+
+// Add import for Notion quiz parser
+import { parseNotionQuiz, notionBlocksToEditorBlocks, ParsedCriterion } from "@/lib/utils/notionQuizParser";
 
 import { updateTaskAndQuestionIdInUrl } from "@/lib/utils/urlUtils";
 import { useRouter } from "next/navigation";
@@ -746,7 +750,7 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
         }
     }, [currentQuestionContent]);
 
-    // Handle Integration page selection
+    // Handle Integration page selection (original — imports as content block)
     const handleIntegrationPageSelect = async (pageId: string, pageTitle: string) => {
         if (!user?.id) {
             console.error('User ID not provided');
@@ -776,6 +780,72 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
             setIsLoadingIntegration(false);
         }
     };
+
+    // Extract structured questions from loaded Notion content
+    const extractQuestionsFromNotion = useCallback(() => {
+        if (!integrationBlocks || integrationBlocks.length === 0) return;
+
+        // Debug: log first few blocks to verify format
+        console.log('[Extract] Total blocks:', integrationBlocks.length);
+        console.log('[Extract] First 3 blocks:', JSON.stringify(integrationBlocks.slice(0, 3), null, 2));
+
+        const parsed = parseNotionQuiz(integrationBlocks);
+        console.log('[Extract] Parsed result:', parsed.questions.length, 'questions found');
+        if (parsed.questions.length > 0) {
+            console.log('[Extract] Q1 scorecard:', parsed.questions[0].scorecard);
+            console.log('[Extract] Q1 answer:', parsed.questions[0].answerText.substring(0, 80));
+        }
+
+        if (parsed.questions.length === 0) {
+            setIntegrationError('No questions found. Expected "## Question N:" headings in the Notion page.');
+            return;
+        }
+
+        const newQuestions: QuizQuestion[] = parsed.questions.map((pq, idx) => {
+            // Build scorecard from parsed criteria, or use default
+            const criteria = pq.scorecard.length > 0
+                ? pq.scorecard.map(c => ({
+                    name: c.name,
+                    description: c.description,
+                    maxScore: c.maxScore,
+                    minScore: c.minScore,
+                    passScore: c.passScore,
+                }))
+                : [
+                    { name: "Relevance", description: "How relevant is the answer to the question?", maxScore: 10, minScore: 0, passScore: 6 },
+                    { name: "Understanding", description: "Does the answer demonstrate clear understanding?", maxScore: 10, minScore: 0, passScore: 6 },
+                    { name: "Clarity", description: "Is the answer clear, well-structured, and easy to follow?", maxScore: 10, minScore: 0, passScore: 6 },
+                ];
+
+            const scorecardData: ScorecardTemplate = {
+                id: `notion-scorecard-${Date.now()}-${idx}`,
+                name: `${pq.title || 'Question ' + (idx + 1)} Scorecard`,
+                criteria,
+                new: true,
+            };
+
+            return {
+                id: `question-${Date.now()}-${idx}`,
+                content: notionBlocksToEditorBlocks(pq.questionBlocks),
+                config: {
+                    ...defaultQuestionConfig,
+                    questionType: 'subjective' as const,
+                    inputType: 'text' as const,
+                    responseType: 'chat' as const,
+                    title: pq.title || `Question ${idx + 1}`,
+                    correctAnswer: pq.answerText
+                        ? [{ id: `ans-${Date.now()}-${idx}`, type: "paragraph", content: [{ type: "text", text: pq.answerText, styles: {} }], props: {}, children: [] }]
+                        : [],
+                    ...(scorecardData ? { scorecardData } : {}),
+                },
+            };
+        });
+
+        setQuestions(newQuestions);
+        setCurrentQuestionIndex(0);
+        lastContentUpdateRef.current = "";
+        setIntegrationError(null);
+    }, [integrationBlocks]);
 
     // Handle Integration page removal
     const handleIntegrationPageRemove = () => {
@@ -1134,8 +1204,8 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
 
                 let scorecardId = null
 
-                if (question.config.scorecardData) {
-                    // Use our helper function to determine if this is an API scorecard
+                if (question.config.scorecardData && !question.config.scorecardData.new) {
+                    // Only use scorecard_id for saved scorecards (not new/unsaved ones)
                     scorecardId = question.config.scorecardData.id
                 }
 
@@ -1235,8 +1305,8 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
 
                 let scorecardId = null
 
-                if (question.config.scorecardData) {
-                    // Use our helper function to determine if this is an API scorecard
+                if (question.config.scorecardData && !question.config.scorecardData.new) {
+                    // Only use scorecard_id for saved scorecards (not new/unsaved ones)
                     scorecardId = question.config.scorecardData.id
                 }
 
@@ -2057,6 +2127,16 @@ const QuizEditor = forwardRef<QuizEditorHandle, QuizEditorProps>(({
                                                             }}
                                                             onLoadingChange={setIsLoadingIntegration}
                                                         />
+                                                        {/* Extract Questions button — visible when Notion content is loaded */}
+                                                        {integrationBlocks.length > 0 && status === 'draft' && (
+                                                            <button
+                                                                onClick={extractQuestionsFromNotion}
+                                                                className="flex items-center gap-2 px-4 py-2 mt-2 rounded-full text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors cursor-pointer"
+                                                            >
+                                                                <Sparkles size={14} />
+                                                                Extract Questions from Notion
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 )}
                                                 <div className={`editor-container h-full overflow-y-auto overflow-hidden relative z-0 ${highlightedField === 'question' ? 'm-2 outline outline-2 outline-red-400 shadow-md shadow-red-900/50 animate-pulse bg-red-50 dark:bg-[#2D1E1E]' : ''}`}>

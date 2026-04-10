@@ -1311,6 +1311,21 @@ export default function LearnerCourseView({
                                                     onAiRespondingChange={handleAiRespondingChange}
                                                     className={`${isSidebarOpen ? 'sidebar-visible' : ''}`}
                                                     isAdminView={isAdminView}
+                                                    onSubmitQuiz={async () => {
+                                                        if (activeItem && userId) {
+                                                            try {
+                                                                await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/tasks/${activeItem.id}/complete`, {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ user_id: parseInt(userId) }),
+                                                                });
+                                                                handleTaskCompletion(activeItem.id, true);
+                                                            } catch (e) {
+                                                                console.error('Failed to mark quiz as submitted:', e);
+                                                            }
+                                                        }
+                                                        closeDialog();
+                                                    }}
                                                 />
                                             </>
                                         )}

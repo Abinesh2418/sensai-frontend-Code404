@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Header } from "@/components/layout/header";
-import { Edit, Save, Users, BookOpen, Layers, Building, ChevronDown, Trash2, ExternalLink } from "lucide-react";
+import { Edit, Save, Users, BookOpen, Layers, Building, ChevronDown, Trash2, ExternalLink, Settings } from "lucide-react";
+import { TrustWeightsAdmin } from "@/components/evaluation";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -25,7 +26,7 @@ interface School {
     members: TeamMember[];
 }
 
-type TabType = 'courses' | 'cohorts' | 'members';
+type TabType = 'courses' | 'cohorts' | 'members' | 'settings';
 
 export default function ClientSchoolAdminView({ id }: { id: string }) {
     const router = useRouter();
@@ -68,7 +69,7 @@ export default function ClientSchoolAdminView({ id }: { id: string }) {
     useEffect(() => {
         // Check if there's a hash in the URL
         const hash = window.location.hash.replace('#', '');
-        if (hash === 'cohorts' || hash === 'members') {
+        if (hash === 'cohorts' || hash === 'members' || hash === 'settings') {
             setActiveTab(hash as TabType);
         }
     }, []);
@@ -595,6 +596,19 @@ export default function ClientSchoolAdminView({ id }: { id: string }) {
                                         Team
                                     </div>
                                 </button>
+                                <button
+                                    className={`px-4 py-2 font-light cursor-pointer ${
+                                        activeTab === 'settings'
+                                            ? 'text-black dark:text-white border-b-2 border-black dark:border-white'
+                                            : 'text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white'
+                                    }`}
+                                    onClick={() => handleTabChange('settings')}
+                                >
+                                    <div className="flex items-center">
+                                        <Settings size={16} className="mr-2" />
+                                        Settings
+                                    </div>
+                                </button>
                             </div>
                         </div>
 
@@ -768,6 +782,13 @@ export default function ClientSchoolAdminView({ id }: { id: string }) {
                                             </tbody>
                                         </table>
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Settings Tab */}
+                            {activeTab === 'settings' && (
+                                <div className="max-w-2xl">
+                                    <TrustWeightsAdmin />
                                 </div>
                             )}
                         </div>

@@ -42,6 +42,7 @@ export interface LearnerQuizViewProps {
     onAiRespondingChange?: (isResponding: boolean) => void;
     onMobileViewChange?: (mode: MobileViewMode) => void;
     isAdminView?: boolean;
+    onSubmitQuiz?: () => void;
 }
 
 export default function LearnerQuizView({
@@ -57,6 +58,7 @@ export default function LearnerQuizView({
     completedQuestionIds: initialCompletedQuestionIds = {},
     onAiRespondingChange,
     onMobileViewChange,
+    onSubmitQuiz,
     isAdminView = false,
 }: LearnerQuizViewProps) {
     const { user } = useAuth();
@@ -2019,13 +2021,23 @@ export default function LearnerQuizView({
                                 </button>
                             </div>
 
-                            <div className="px-3 py-1 rounded-full text-sm flex items-center bg-indigo-100 text-indigo-900 dark:bg-[#222222] dark:text-white">
-                                <span>Question {currentQuestionIndex + 1} / {validQuestions.length}</span>
-                                {validQuestions[currentQuestionIndex] &&
-                                    completedQuestionIds &&
-                                    completedQuestionIds[validQuestions[currentQuestionIndex].id] && (
-                                        <CheckCircle size={14} className="ml-2 flex-shrink-0 text-emerald-500 dark:text-green-500" />
-                                    )}
+                            <div className="flex items-center gap-3">
+                                <div className="px-3 py-1 rounded-full text-sm flex items-center bg-indigo-100 text-indigo-900 dark:bg-[#222222] dark:text-white">
+                                    <span>Question {currentQuestionIndex + 1} / {validQuestions.length}</span>
+                                    {validQuestions[currentQuestionIndex] &&
+                                        completedQuestionIds &&
+                                        completedQuestionIds[validQuestions[currentQuestionIndex].id] && (
+                                            <CheckCircle size={14} className="ml-2 flex-shrink-0 text-emerald-500 dark:text-green-500" />
+                                        )}
+                                </div>
+                                {onSubmitQuiz && (
+                                    <button
+                                        onClick={onSubmitQuiz}
+                                        className="px-4 py-1 rounded-full text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                                    >
+                                        Submit Quiz
+                                    </button>
+                                )}
                             </div>
 
                             <div className="w-10 h-10">

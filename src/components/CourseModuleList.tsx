@@ -1016,6 +1016,12 @@ export default function CourseModuleList({
                                                                     : `${(item as Quiz).numQuestions} question${(item as Quiz).numQuestions === 1 ? '' : 's'}`})
                                                             </span>
                                                         )}
+                                                        {/* Submitted badge for completed quizzes in learner view */}
+                                                        {mode === 'view' && item.type === 'quiz' && isItemCompleted && (
+                                                            <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                                                Submitted - Awaiting Evaluation
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
 

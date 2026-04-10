@@ -6,7 +6,8 @@ import CohortDashboard from "@/components/CohortDashboard";
 import LearnerCohortView from "@/components/LearnerCohortView";
 import { Module } from "@/types/course";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, Users } from "lucide-react";
+import { Eye, Users, ClipboardList, ChevronRight, Loader2 } from "lucide-react";
+import Link from "next/link";
 
 interface TaskTypeMetrics {
     completion_rate: number;
@@ -55,11 +56,11 @@ export default function MentorCohortView({
 
     // Get view mode from URL params, default to 'mentor'
     const urlView = searchParams.get('view');
-    const isValidViewMode = (view: string | null): view is 'mentor' | 'learner' => {
-        return view === 'mentor' || view === 'learner';
+    const isValidViewMode = (view: string | null): view is 'mentor' | 'learner' | 'reviews' => {
+        return view === 'mentor' || view === 'learner' || view === 'reviews';
     };
     const defaultView = isValidViewMode(urlView) ? urlView : 'mentor';
-    const [viewMode, setViewMode] = useState<'mentor' | 'learner'>(defaultView);
+    const [viewMode, setViewMode] = useState<'mentor' | 'learner' | 'reviews'>(defaultView);
 
     // Sync viewMode with URL changes
     useEffect(() => {
@@ -77,7 +78,7 @@ export default function MentorCohortView({
     };
 
     // Handle view mode toggle
-    const handleViewModeToggle = (mode: 'mentor' | 'learner') => {
+    const handleViewModeToggle = (mode: 'mentor' | 'learner' | 'reviews') => {
         setViewMode(mode);
         updateUrlWithViewMode(mode);
     };
@@ -171,6 +172,16 @@ export default function MentorCohortView({
                         <Eye size={16} className="mr-2" />
                         Learner View
                     </button>
+                    <button
+                        onClick={() => handleViewModeToggle('reviews')}
+                        className={`flex items-center px-4 py-2 rounded-full text-sm font-light transition-all cursor-pointer ${viewMode === 'reviews'
+                            ? 'bg-white text-black'
+                            : 'text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-black'
+                            }`}
+                    >
+                        <ClipboardList size={16} className="mr-2" />
+                        Reviews
+                    </button>
                 </div>
             </div>
 
@@ -186,6 +197,8 @@ export default function MentorCohortView({
                     onActiveCourseChange={onActiveCourseChange}
                     batchId={batchId}
                 />
+            ) : viewMode === 'reviews' ? (
+                <ReadyForEvaluation schoolSlug={schoolSlug} cohortId={cohort.id} batchId={batchId} />
             ) : (
                 <LearnerCohortView
                     courseTitle={courses.length > 1 ? "" : courses[activeCourseIndex]?.name || ""}
@@ -203,4 +216,120 @@ export default function MentorCohortView({
             )}
         </div>
     );
-} 
+}
+
+
+// ─── Ready for Evaluation Component ──────────────────────────────────────────
+
+interface ReadyForEvaluationProps {
+    schoolSlug: string;
+    cohortId: number;
+    batchId?: number | null;
+}
+
+interface Submission {
+    user_id: number;
+    user_name: string;
+    task_id: number;
+    task_title: string;
+    questions_answered: number;
+    submitted_at: string | null;
+}
+
+function ReadyForEvaluation({ schoolSlug, cohortId, batchId }: ReadyForEvaluationProps) {
+    const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchSubmissions = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const params = new URLSearchParams();
+            if (cohortId) params.set("cohort_id", String(cohortId));
+            if (batchId) params.set("batch_id", String(batchId));
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/evaluations/ready-for-evaluation?${params}`);
+            if (!res.ok) throw new Error("Failed to fetch");
+            const data = await res.json();
+            setSubmissions(data);
+        } catch {
+            setError("Failed to load submissions");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchSubmissions();
+    }, [cohortId, batchId]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <Loader2 size={24} className="animate-spin text-gray-400 dark:text-zinc-500" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-12">
+                <p className="text-sm text-gray-500 dark:text-zinc-400 mb-3">{error}</p>
+                <button onClick={fetchSubmissions} className="text-sm text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Retry</button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-lg font-light text-gray-900 dark:text-white">Ready for Evaluation</h2>
+                    <p className="text-sm text-gray-500 dark:text-zinc-400">
+                        {submissions.length} submission{submissions.length !== 1 ? 's' : ''} awaiting evaluation
+                    </p>
+                </div>
+                <button onClick={fetchSubmissions} className="text-sm text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 cursor-pointer">
+                    Refresh
+                </button>
+            </div>
+
+            {submissions.length === 0 ? (
+                <div className="text-center py-8">
+                    <ClipboardList size={32} className="mx-auto text-gray-300 dark:text-zinc-600 mb-3" />
+                    <p className="text-sm text-gray-500 dark:text-zinc-400">No submissions awaiting evaluation</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {submissions.map(s => (
+                        <Link
+                            key={`${s.user_id}-${s.task_id}`}
+                            href={`/school/${schoolSlug}/evaluation/${s.user_id}/${s.task_id}`}
+                            className="flex items-center justify-between p-5 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                        >
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <span className="text-base font-medium text-gray-900 dark:text-white">{s.user_name}</span>
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                        Ready to Evaluate
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-600 dark:text-zinc-400">{s.task_title}</p>
+                                <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 dark:text-zinc-500">
+                                    <span>{s.questions_answered} question{s.questions_answered !== 1 ? 's' : ''} answered</span>
+                                    {s.submitted_at && <span>{new Date(s.submitted_at).toLocaleDateString()}</span>}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                                <span className="px-4 py-1.5 rounded-full text-xs font-medium bg-gray-900 text-white dark:bg-white dark:text-gray-900">
+                                    Evaluate
+                                </span>
+                                <ChevronRight size={16} className="text-gray-400 dark:text-zinc-500" />
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
